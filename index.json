@@ -1,0 +1,49 @@
+{
+    "Comment": "Assistente de Delivery utilizando AWS Step Functions e Amazon Bedrock",
+    "StartAt": "ReceberPedido",
+    "States": {
+      "ReceberPedido": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ReceberPedidoFunction",
+        "Next": "ValidarPedido"
+      },
+      "ValidarPedido": {
+        "Type": "Choice",
+        "Choices": [
+          {
+            "Variable": "$.pedidoValido",
+            "BooleanEquals": true,
+            "Next": "ProcessarPagamento"
+          }
+        ],
+        "Default": "PedidoInvalido"
+      },
+      "PedidoInvalido": {
+        "Type": "Fail",
+        "Error": "PedidoInvalidoError",
+        "Cause": "O pedido não é válido."
+      },
+      "ProcessarPagamento": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:ProcessarPagamentoFunction",
+        "Next": "AtualizarStatus"
+      },
+      "AtualizarStatus": {
+        "Type": "Task",
+        "Resource": "arn:aws:lambda:REGION:ACCOUNT_ID:function:AtualizarStatusFunction",
+        "Next": "PersonalizarExperiencia"
+      },
+      "PersonalizarExperiencia": {
+        "Type": "Task",
+        "Resource": "arn:aws:states:::bedrock:invokeModel",
+        "Parameters": {
+          "ModelId": "MODEL_ID",
+          "Body": {
+            "input": "$.dadosCliente"
+          }
+        },
+        "End": true
+      }
+    }
+  }
+  
